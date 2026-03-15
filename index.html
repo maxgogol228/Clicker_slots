@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>🍊 ORANGE SLOTS + CLICKER</title>
+    <style>
+        * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    /* Убираем выделение на мобильных */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Разрешаем выделение текста в статистике (если нужно) */
+.clicker-stats .stat-row span,
+.balance-box span,
+.message {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+/* Убираем outline при фокусе на кнопках */
+button:focus,
+button:active,
+.spin-btn:focus,
+.spin-btn:active,
+.upgrade-card:focus,
+.upgrade-card:active {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+        body {
+            background: radial-gradient(circle at 30% 30%, #0c0a1a, #020110);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .game-wrapper {
+            max-width: 1600px;
+            width: 100%;
+            background: #130f24;
+            border: 3px solid #ff8c42;
+            border-radius: 36px;
+            padding: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.9), 0 0 40px #ffa50080;
+        }
+
+        .split-main {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        /* ----- LEFT: SLOTS (24 cells: 4x6) ----- */
+        .slots-side {
+            flex: 2;
+            min-width: 550px;
+            background: #0d0820;
+            border-radius: 30px;
+            border: 2px solid #ff7f2a;
+            padding: 15px;
+            box-shadow: inset 0 0 30px #451e00;
+        }
+
+        .reels-area {
+            overflow-x: auto;
+            overflow-y: visible;
+            scrollbar-width: thin;
+            scrollbar-color: #ff8c42 #1f173a;
+            margin-bottom: 15px;
+            border-radius: 20px;
+        }
+        .reels-area::-webkit-scrollbar {
+            height: 8px;
+        }
+        .reels-area::-webkit-scrollbar-track {
+            background: #1f173a;
+            border-radius: 20px;
+        }
+        .reels-area::-webkit-scrollbar-thumb {
+            background: #ff8c42;
+            border-radius: 20px;
+        }
+
+        .reels-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+            width: fit-content;
+            margin: 0 auto;
+        }
+
+        .reel-column {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 65px;
+        }
+        .reel {
+            width: 65px;
+            height: 78px;
+            background: linear-gradient(145deg, #4f3e6b, #221c34);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffaa00, 0 0 20px #ff5500;
+            box-shadow: inset 0 -3px 6px #00000080, 0 0 12px #ff7b00;
+            transition: all 0.1s;
+            font-weight: bold;
+        }
+        .reel.win-highlight {
+            animation: winGlow 1s ease infinite alternate;
+            box-shadow: 0 0 35px #ff9900, 0 0 60px #ff5500;
+        }
+        @keyframes winGlow {
+            0% { filter: brightness(1); }
+            100% { filter: brightness(1.5); }
+        }
+
+        .slots-control {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            background: #1f1935;
+            border-radius: 30px;
+            padding: 12px;
+            border: 2px solid #ff8c42;
+        }
+        .balance-box {
+            background: #2e2347;
+            border-radius: 40px;
+            padding: 8px 20px;
+            border: 2px solid #ffa031;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 2px 2px 0 #000000;
+        }
+        .bet-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #140f24;
+            padding: 5px 12px;
+            border-radius: 40px;
+        }
+        .bet-controls button {
+            background: #ff8c42;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #1f173a;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #a04f00;
+            transition: 0.02s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bet-controls button:active { transform: translateY(5px); box-shadow: none; }
+        .bet-controls button:disabled { opacity: 0.4; transform: none; pointer-events: none; }
+        #betDisplay {
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 1.4rem;
+            min-width: 80px;
+            text-align: center;
+            text-shadow: 2px 2px 0 #000000;
+        }
+        .spin-btn {
+            background: linear-gradient(145deg, #ff9f4b, #ff6a0c);
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            border-radius: 50px;
+            color: #ffffff;
+            text-shadow: 2px 2px 0 #000000;
+            box-shadow: 0 5px 0 #a84b00, 0 0 30px #ff7b1c;
+            cursor: pointer;
+            transition: 0.02s;
+        }
+        .spin-btn:active { transform: translateY(5px); box-shadow: none; }
+        .spin-btn:disabled { opacity: 0.5; transform: translateY(2px); }
+
+        .payouts-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            justify-content: center;
+        }
+        .payout-item {
+            background: #2a1f40;
+            padding: 4px 12px;
+            border-radius: 30px;
+            border: 1px solid #ff9f4b;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #ffffff;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #000000;
+        }
+        .payout-symbol { font-size: 1.5rem; }
+
+        /* ----- RIGHT: CLICKER ----- */
+        .clicker-side {
+            flex: 1;
+            min-width: 300px;
+            background: #1f1935;
+            border-radius: 30px;
+            border: 3px solid #ff8c42;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 0 30px #ff7b1c;
+        }
+
+        .orange-button {
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle at 35% 35%, #ffb347, #ff6a0c);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6rem;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 15px 0 #a84b00, 0 20px 30px black, 0 0 60px #ffaa33;
+            transition: 0.03s linear;
+            border: 5px solid #ffdd99;
+            margin: 10px 0;
+        }
+        .orange-button:active {
+            transform: translateY(10px);
+            box-shadow: 0 5px 0 #a84b00, 0 20px 30px black, 0 0 60px #ffaa33;
+        }
+
+        .clicker-stats {
+            background: #2a1f40;
+            border-radius: 40px;
+            padding: 15px;
+            width: 100%;
+            border: 2px solid #ff9f2f;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            color: #ffffff;
+            font-size: 1.3rem;
+            margin: 8px 0;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 #000000;
+        }
+
+        .upgrade-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .upgrade-grid::-webkit-scrollbar {
+            width: 5px;
+        }
+        .upgrade-grid::-webkit-scrollbar-track {
+            background: #1f173a;
+            border-radius: 10px;
+        }
+        .upgrade-grid::-webkit-scrollbar-thumb {
+            background: #ff8c42;
+            border-radius: 10px;
+        }
+        
+        .upgrade-card {
+            background: #2e2347;
+            border-radius: 25px;
+            padding: 12px 8px;
+            border: 2px solid #ffa031;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #ffffff;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #000000;
+        }
+        .upgrade-card:active { transform: scale(0.95); background: #3f2f60; }
+        .upgrade-card.disabled { opacity: 0.4; pointer-events: none; }
+        .upgrade-card.locked { 
+            opacity: 0.6; 
+            pointer-events: none; 
+            filter: grayscale(0.8);
+            background: #1a1528;
+            border-color: #666;
+        }
+        .upgrade-icon { font-size: 1.8rem; }
+        .upgrade-name { color: #ffb95c; font-weight: bold; font-size: 0.9rem; text-align: center; }
+        .upgrade-price { color: #ffd966; font-weight: bold; }
+        .upgrade-req { color: #ff9999; font-size: 0.8rem; text-align: center; }
+
+        .message {
+            text-align: center;
+            color: #ffffff;
+            font-size: 1rem;
+            min-height: 2rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 #000000;
+        }
+
+        .fireworks-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Исправленная мобильная версия */
+        @media (max-width: 900px) {
+            .split-main { 
+                flex-direction: column; 
+            }
+            .slots-side { 
+                min-width: 100%; 
+                width: 100%;
+            }
+            .reel { 
+                width: 50px; 
+                height: 60px; 
+                font-size: 1.5rem; 
+            }
+            .reel-column { 
+                width: 50px; 
+            }
+            .orange-button { 
+                width: 180px; 
+                height: 180px; 
+                font-size: 5rem; 
+            }
+            .game-wrapper {
+                padding: 10px;
+            }
+            .bet-controls {
+                flex-wrap: wrap;
+            }
+            #betDisplay {
+                min-width: 60px;
+                font-size: 1.2rem;
+            }
+            .spin-btn {
+                font-size: 1.3rem;
+                padding: 10px 15px;
+            }
+        }
+
+        /* Для очень маленьких экранов */
+        @media (max-width: 480px) {
+            .reel { 
+                width: 40px; 
+                height: 48px; 
+                font-size: 1.2rem; 
+            }
+            .reel-column { 
+                width: 40px; 
+            }
+            .balance-box {
+                font-size: 1.1rem;
+                padding: 5px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="game-wrapper">
+    <div class="split-main">
+        <!-- LEFT: SLOTS (24 cells) -->
+        <div class="slots-side">
+            <div class="reels-area">
+                <div class="reels-grid" id="reelsGrid"></div>
+            </div>
+            <div class="slots-control">
+                <div class="balance-box">
+                    <span>💰 <span id="balanceDisplay">1000</span></span>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <div class="bet-controls">
+                        <button id="decreaseBet">−</button>
+                        <span id="betDisplay">100</span>
+                        <button id="increaseBet">+</button>
+                    </div>
+                    <button class="spin-btn" id="spinButton">🌀 SPIN</button>
+                </div>
+            </div>
+            <div class="payouts-panel" id="payoutsPanel"></div>
+            <div class="message" id="messageArea">⚡ 4+ in a row = win</div>
+        </div>
+
+        <!-- RIGHT: CLICKER -->
+        <div class="clicker-side">
+            <div class="orange-button" id="clickerOrange">
+                🍊
+            </div>
+            <div class="clicker-stats">
+                <div class="stat-row"><span>🍊 per click</span> <span id="perClickDisplay">1</span></div>
+                <div class="stat-row"><span>⏲️ auto/sec</span> <span id="autoDisplay">0</span></div>
+                <div class="stat-row"><span>💰 balance</span> <span id="clickerBalanceDisplay">1000</span></div>
+            </div>
+            <div class="upgrade-grid" id="upgradeGrid"></div>
+            <div class="message" id="clickerMessage">👆 tap the orange</div>
+        </div>
+    </div>
+</div>
+<canvas id="fireworksCanvas" class="fireworks-canvas" style="display: none;"></canvas>
+
+<script>
+    (function() {
+        // ---------- СЕРВЕРНОЕ ЛОГИРОВАНИЕ (имитация) ----------
+        function sendLog(action, details) {
+            console.log(`[LOG] ${action}:`, details, `at ${new Date().toISOString()}`);
+            let history = JSON.parse(localStorage.getItem('gameHistory') || '[]');
+            history.push({
+                time: new Date().toISOString(),
+                action: action,
+                details: details
+            });
+            if (history.length > 50) history.shift();
+            localStorage.setItem('gameHistory', JSON.stringify(history));
+        }
+
+        // ---------- СОХРАНЕНИЕ ПРОГРЕССА ----------
+        function saveProgress() {
+            const progress = {
+                balance: balance,
+                clickPower: clickPower,
+                autoIncome: autoIncome,
+                currentBet: currentBet,
+                upgrades: upgrades.map(up => ({ id: up.id, price: up.price, unlocked: up.unlocked })),
+                timestamp: Date.now()
+            };
+            localStorage.setItem('orangeSlotsProgress', JSON.stringify(progress));
+            sendLog('progress_saved', { balance });
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('orangeSlotsProgress');
+            if (saved) {
+                try {
+                    const progress = JSON.parse(saved);
+                    balance = progress.balance || 1000;
+                    clickPower = progress.clickPower || 1;
+                    autoIncome = progress.autoIncome || 0;
+                    currentBet = progress.currentBet || 100;
+                    
+                    if (progress.upgrades) {
+                        progress.upgrades.forEach(savedUp => {
+                            const up = upgrades.find(u => u.id === savedUp.id);
+                            if (up) {
+                                up.price = savedUp.price;
+                                up.unlocked = savedUp.unlocked || false;
+                            }
+                        });
+                    }
+                    
+                    sendLog('progress_loaded', { balance });
+                } catch (e) {
+                    console.error('Failed to load progress', e);
+                }
+            }
+        }
+
+        // ---------- SHARED BALANCE ----------
+        let balance = 1000;
+
+        // ---------- SLOTS STATE ----------
+        const ROWS = 4;
+        const COLS = 6;
+        const TOTAL_CELLS = 24;
+        const WIN_REQUIREMENT = 4;
+
+        let spinning = false;
+        let currentBet = 100;
+
+        // Symbols with updated multipliers
+        const SYMBOLS = [
+            { char: '🍊', multiplier: 1.5, weight: 140, name: 'Orange' },
+            { char: '🔥', multiplier: 2.0, weight: 120, name: 'Fire' },
+            { char: '🌕', multiplier: 4.0, weight: 100, name: 'Moon' },
+            { char: '🧡', multiplier: 5.0, weight: 85, name: 'Heart' },
+            { char: '🎃', multiplier: 6.0, weight: 65, name: 'Pumpkin' },
+            { char: '⭐', multiplier: 10.0, weight: 45, name: 'Star' }
+        ];
+
+        // ---------- CLICKER STATE ----------
+        let clickPower = 1;
+        let autoIncome = 0;
+        let autoInterval = null;
+
+        // Upgrades with progressive unlocking
+        const upgrades = [
+            { 
+                id: 'power1', 
+                name: '💪 +1/click', 
+                price: 50, 
+                type: 'click', 
+                unlocked: true,
+                effect: () => { clickPower++; } 
+            },
+            { 
+                id: 'auto1', 
+                name: '🤖 +1/sec', 
+                price: 100, 
+                type: 'auto', 
+                unlocked: true,
+                effect: () => { autoIncome++; restartAuto(); } 
+            },
+            { 
+                id: 'power2', 
+                name: '⚡ +5/click', 
+                price: 500, 
+                type: 'click',
+                unlocked: true, 
+                effect: () => { clickPower += 5; } 
+            },
+            { 
+                id: 'auto2', 
+                name: '🌳 +3/sec', 
+                price: 300, 
+                type: 'auto',
+                unlocked: true, 
+                effect: () => { autoIncome += 3; restartAuto(); } 
+            },
+            { 
+                id: 'power3', 
+                name: '🔥 +10/click', 
+                price: 2000, 
+                type: 'click',
+                unlocked: false,
+                requireAuto: 5,
+                effect: () => { clickPower += 10; } 
+            },
+            { 
+                id: 'auto3', 
+                name: '🚀 +15/sec', 
+                price: 5000, 
+                type: 'auto',
+                unlocked: false,
+                requireAuto: 10,
+                effect: () => { autoIncome += 15; restartAuto(); } 
+            },
+            { 
+                id: 'power4', 
+                name: '💎 +50/click', 
+                price: 20000, 
+                type: 'click',
+                unlocked: false,
+                requireAuto: 20,
+                effect: () => { clickPower += 50; } 
+            },
+            { 
+                id: 'auto4', 
+                name: '🌌 +100/sec', 
+                price: 50000, 
+                type: 'auto',
+                unlocked: false,
+                requireAuto: 50,
+                effect: () => { autoIncome += 100; restartAuto(); } 
+            }
+        ];
+
+        // DOM elements
+        const balanceSpan = document.getElementById('balanceDisplay');
+        const clickerBalanceSpan = document.getElementById('clickerBalanceDisplay');
+        const perClickSpan = document.getElementById('perClickDisplay');
+        const autoSpan = document.getElementById('autoDisplay');
+        const messageDiv = document.getElementById('messageArea');
+        const clickerMessage = document.getElementById('clickerMessage');
+        const spinBtn = document.getElementById('spinButton');
+        const decreaseBtn = document.getElementById('decreaseBet');
+        const increaseBtn = document.getElementById('increaseBet');
+        const betSpan = document.getElementById('betDisplay');
+        const clickerOrange = document.getElementById('clickerOrange');
+        const upgradeGrid = document.getElementById('upgradeGrid');
+        const payoutsPanel = document.getElementById('payoutsPanel');
+        const reelsGrid = document.getElementById('reelsGrid');
+
+        // Загружаем сохраненный прогресс
+        loadProgress();
+
+        // ---------- UTILS ----------
+        function getRandomSymbol() {
+            const total = SYMBOLS.reduce((acc, s) => acc + s.weight, 0);
+            let r = Math.floor(Math.random() * total);
+            for (let s of SYMBOLS) {
+                if (r < s.weight) return s;
+                r -= s.weight;
+            }
+            return SYMBOLS[0];
+        }
+
+        function getSymbolObj(char) {
+            return SYMBOLS.find(s => s.char === char) || SYMBOLS[0];
+        }
+
+        // ---------- BUILD SLOTS ----------
+        function buildReels() {
+            reelsGrid.innerHTML = '';
+            for (let c = 0; c < COLS; c++) {
+                const col = document.createElement('div');
+                col.className = 'reel-column';
+                for (let r = 0; r < ROWS; r++) {
+                    const reel = document.createElement('div');
+                    reel.className = 'reel';
+                    reel.innerText = getRandomSymbol().char;
+                    col.appendChild(reel);
+                }
+                reelsGrid.appendChild(col);
+            }
+        }
+
+        // Get all reel elements
+        function getReelElements() {
+            return Array.from(document.querySelectorAll('.reel'));
+        }
+
+        // ---------- BUILD PAYOUTS ----------
+        function buildPayouts() {
+            payoutsPanel.innerHTML = '';
+            SYMBOLS.forEach(sym => {
+                const div = document.createElement('div');
+                div.className = 'payout-item';
+                div.innerHTML = `<span class="payout-symbol">${sym.char}</span><span>${sym.multiplier}×</span>`;
+                payoutsPanel.appendChild(div);
+            });
+        }
+
+        // ---------- CHECK FOR UNLOCKED UPGRADES ----------
+        function updateUnlockedUpgrades() {
+            upgrades.forEach(up => {
+                if (!up.unlocked && up.requireAuto) {
+                    if (autoIncome >= up.requireAuto) {
+                        up.unlocked = true;
+                        sendLog('upgrade_unlocked', { upgrade: up.id, autoIncome });
+                    }
+                }
+            });
+        }
+
+        // ---------- BUILD UPGRADES ----------
+        function buildUpgrades() {
+            updateUnlockedUpgrades();
+            upgradeGrid.innerHTML = '';
+            
+            upgrades.forEach(up => {
+                let cardClass = 'upgrade-card';
+                if (!up.unlocked) {
+                    cardClass += ' locked';
+                } else if (up.price > balance) {
+                    cardClass += ' disabled';
+                }
+                
+                const card = document.createElement('div');
+                card.className = cardClass;
+                
+                let reqText = '';
+                if (!up.unlocked && up.requireAuto) {
+                    reqText = `<span class="upgrade-req">need ${up.requireAuto}/sec</span>`;
+                }
+                
+                card.innerHTML = `
+                    <span class="upgrade-icon">${up.id.includes('auto') ? '🤖' : '💪'}</span>
+                    <span class="upgrade-name">${up.name}</span>
+                    <span class="upgrade-price">🍊 ${up.price}</span>
+                    ${reqText}
+                `;
+                
+                if (up.unlocked) {
+                    card.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (balance >= up.price) {
+                            balance -= up.price;
+                            up.effect();
+                            up.price = Math.floor(up.price * 1.2); // Уменьшенный множитель 1.2x
+                            updateUI();
+                            buildUpgrades();
+                            saveProgress();
+                            sendLog('upgrade_bought', { upgrade: up.id, newPrice: up.price });
+                        }
+                    });
+                }
+                
+                upgradeGrid.appendChild(card);
+            });
+        }
+
+        // ---------- AUTO INCOME ----------
+        function restartAuto() {
+            if (autoInterval) clearInterval(autoInterval);
+            autoInterval = setInterval(() => {
+                if (autoIncome > 0) {
+                    balance += autoIncome;
+                    updateUI();
+                    saveProgress();
+                    sendLog('auto_income', { amount: autoIncome });
+                }
+            }, 1000);
+        }
+
+        // ---------- CLICKER ----------
+        clickerOrange.addEventListener('click', () => {
+            balance += clickPower;
+            clickerMessage.innerText = `+${clickPower} oranges!`;
+            updateUI();
+            saveProgress();
+            sendLog('click', { gain: clickPower });
+            
+            clickerOrange.style.transform = 'scale(1.1)';
+            setTimeout(() => clickerOrange.style.transform = '', 100);
+        });
+
+        // ---------- FIREWORKS ----------
+        function startFireworks() {
+            const canvas = document.getElementById('fireworksCanvas');
+            canvas.style.display = 'block';
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            for (let i = 0; i < 50; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height + Math.random() * 150,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: -Math.random() * 10 - 5,
+                    size: Math.random() * 6 + 3,
+                    color: `hsl(${Math.random() * 40 + 20}, 100%, 60%)`,
+                    life: 1
+                });
+            }
+            function animate() {
+                if (!particles.length) { canvas.style.display = 'none'; return; }
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.globalCompositeOperation = 'lighter';
+                for (let i = particles.length-1; i>=0; i--) {
+                    let p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.1;
+                    p.life -= 0.005;
+                    if (p.life <= 0 || p.y > canvas.height+150) {
+                        particles.splice(i,1);
+                        continue;
+                    }
+                    ctx.globalAlpha = p.life;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+            setTimeout(() => { particles = []; canvas.style.display = 'none'; }, 4000);
+        }
+
+        // ---------- SLOTS SPIN (исправленный подсчет комбинаций) ----------
+        async function spinSlots() {
+            if (spinning) return;
+            if (balance < currentBet) {
+                messageDiv.innerText = '❌ not enough';
+                return;
+            }
+
+            balance -= currentBet;
+            spinning = true;
+            updateUI();
+            messageDiv.innerText = 'spinning...';
+            sendLog('spin_start', { bet: currentBet });
+
+            const columns = document.querySelectorAll('.reel-column');
+            const reelElements = getReelElements();
+            
+            // Start spinning animation
+            columns.forEach(col => col.classList.add('spinning'));
+
+            // Random flicker
+            const spinInterval = setInterval(() => {
+                for (let i = 0; i < reelElements.length; i++) {
+                    if (Math.random() > 0.6) {
+                        reelElements[i].innerText = getRandomSymbol().char;
+                    }
+                }
+            }, 50);
+
+            // Spin duration
+            await new Promise(r => setTimeout(r, 800));
+            clearInterval(spinInterval);
+
+            // Generate final grid
+            const finalGrid = [];
+            for (let i = 0; i < TOTAL_CELLS; i++) {
+                finalGrid.push(getRandomSymbol());
+            }
+
+            // Update reels with final symbols
+            reelElements.forEach((el, idx) => {
+                el.innerText = finalGrid[idx].char;
+            });
+
+            // Stop spinning
+            columns.forEach(col => col.classList.remove('spinning'));
+
+            // Check wins - улучшенная проверка
+            let winAmount = 0;
+            const winCombos = [];
+
+            // Снимаем предыдущие подсветки
+            reelElements.forEach(el => el.classList.remove('win-highlight'));
+
+            // Проверяем каждый ряд
+            for (let r = 0; r < ROWS; r++) {
+                // Собираем символы в ряду
+                const rowSymbols = [];
+                for (let c = 0; c < COLS; c++) {
+                    rowSymbols.push(finalGrid[r * COLS + c].char);
+                }
+                
+                // Считаем количество каждого символа
+                const counts = {};
+                rowSymbols.forEach(ch => {
+                    counts[ch] = (counts[ch] || 0) + 1;
+                });
+                
+                // Проверяем каждый символ
+                for (let ch in counts) {
+                    if (counts[ch] >= WIN_REQUIREMENT) {
+                        const sym = getSymbolObj(ch);
+                        // Формула: ставка * множитель * (количество - requirement + 1)
+                        const win = Math.floor(currentBet * sym.multiplier * (counts[ch] - WIN_REQUIREMENT + 1));
+                        winAmount += win;
+                        winCombos.push(`${counts[ch]}x ${ch} (${sym.multiplier}×)`);
+                        
+                        // Подсвечиваем выигрышные символы
+                        for (let c = 0; c < COLS; c++) {
+                            if (rowSymbols[c] === ch) {
+                                reelElements[r * COLS + c].classList.add('win-highlight');
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (winAmount > 0) {
+                balance += winAmount;
+                messageDiv.innerHTML = `🎉 Won ${winAmount}! ${winCombos.join(' + ')}`;
+                sendLog('spin_win', { win: winAmount, combos: winCombos });
+                
+                // Убираем подсветку через 2 секунды
+                setTimeout(() => {
+                    reelElements.forEach(el => el.classList.remove('win-highlight'));
+                }, 2000);
+                
+                if (winAmount > currentBet * 2) {
+                    startFireworks();
+                    sendLog('fireworks', { winAmount });
+                }
+            } else {
+                messageDiv.innerText = '💨 No win';
+                sendLog('spin_loss', { bet: currentBet });
+            }
+
+            spinning = false;
+            updateUI();
+            saveProgress();
+        }
+
+        // ---------- UI UPDATE ----------
+        function updateUI() {
+            balanceSpan.innerText = balance;
+            clickerBalanceSpan.innerText = balance;
+            perClickSpan.innerText = clickPower;
+            autoSpan.innerText = autoIncome;
+            betSpan.innerText = currentBet;
+            buildUpgrades();
+        }
+
+        // ---------- BET CONTROLS (до 1,000,000) ----------
+        decreaseBtn.addEventListener('click', () => {
+            if (currentBet > 100) currentBet -= 100;
+            updateUI();
+            saveProgress();
+        });
+        
+        increaseBtn.addEventListener('click', () => {
+            if (currentBet < 1000000) currentBet += 100;
+            updateUI();
+            saveProgress();
+        });
+
+        spinBtn.addEventListener('click', spinSlots);
+
+        // ---------- INIT ----------
+        buildReels();
+        buildPayouts();
+        buildUpgrades();
+        updateUI();
+        restartAuto();
+        
+        sendLog('game_start', { balance, clickPower, autoIncome });
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => {
+            if (autoInterval) clearInterval(autoInterval);
+            saveProgress();
+            sendLog('game_exit', { balance });
+        });
+
+        // Автосохранение каждые 30 секунд
+        setInterval(saveProgress, 30000);
+    })();
+</script>
+</body>
+</html>
